@@ -1,261 +1,7 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>TEF Canada APEX Mobile (V12)</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
+<script>
+    // Using a reliable public JSON storage bin endpoint for seamless cross-device sync
+    const BIN_URL = 'https://api.npoint.io/6a5e5f41da38895dfe775264'; // or your synced endpoint URL
 
-    :root {
-      --bg-dark: #000000;
-      --card-bg: rgba(22, 22, 26, 0.85);
-      --card-border: #2a2a32;
-      --text-main: #f3f4f6;
-      --text-muted: #9ca3af;
-      --accent-indigo: #6366f1;
-      --accent-emerald: #10b981;
-      --accent-amber: #f59e0b;
-      --accent-sky: #0ea5e9;
-      --accent-rose: #f43f5e;
-      --accent-purple: #8b5cf6;
-      --glass-blur: blur(16px);
-    }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', -apple-system, sans-serif; -webkit-tap-highlight-color: transparent; }
-    
-    body { 
-      background-color: var(--bg-dark); 
-      color: var(--text-main); 
-      padding: 0.85rem; 
-      line-height: 1.4;
-      background-image: radial-gradient(circle at 50% 0%, #1a1a2e 0%, transparent 60%);
-      background-attachment: fixed;
-      overflow-x: hidden;
-    }
-    
-    .container { max-width: 1400px; margin: 0 auto; }
-
-    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; padding-bottom: 0.85rem; border-bottom: 1px solid var(--card-border); flex-wrap: wrap; gap: 0.75rem; }
-    header h1 { font-size: 1.5rem; font-weight: 900; letter-spacing: -0.04em; background: -webkit-linear-gradient(45deg, #fff, #999); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    .header-controls { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; width: 100%; justify-content: space-between; }
-    
-    .badge { padding: 0.25rem 0.65rem; border-radius: 9999px; font-size: 0.7rem; font-weight: 700; border: 1px solid transparent; letter-spacing: 0.03em; text-transform: uppercase; }
-    .badge-purple { background: rgba(139, 92, 246, 0.18); color: var(--accent-purple); border-color: rgba(139, 92, 246, 0.35); }
-    .badge-rose { background: rgba(244, 63, 94, 0.18); color: var(--accent-rose); border-color: rgba(244, 63, 94, 0.35); }
-    .badge-emerald { background: rgba(16, 185, 129, 0.18); color: var(--accent-emerald); border-color: rgba(16, 185, 129, 0.35); }
-    
-    .btn { background: rgba(255,255,255,0.06); border: 1px solid var(--card-border); color: var(--text-main); padding: 0.5rem 0.85rem; border-radius: 10px; font-size: 0.78rem; cursor: pointer; font-weight: 700; transition: all 0.2s ease; backdrop-filter: var(--glass-blur); display: inline-flex; align-items: center; justify-content: center; gap: 0.35rem; min-height: 38px; }
-    .btn:active { transform: scale(0.97); }
-    .btn-primary { background: var(--accent-indigo); color: white; border-color: var(--accent-indigo); }
-    .btn-emerald { background: var(--accent-emerald); color: #000; border-color: var(--accent-emerald); }
-
-    .card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 14px; padding: 1rem; margin-bottom: 1rem; backdrop-filter: var(--glass-blur); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25); }
-    .card h2 { font-size: 1rem; margin-bottom: 0.85rem; display: flex; align-items: center; justify-content: space-between; font-weight: 800; letter-spacing: -0.02em; }
-
-    .dashboard-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; }
-    @media (min-width: 992px) { .dashboard-grid { grid-template-columns: 2fr 1fr; gap: 1.5rem; } header { flex-wrap: nowrap; } .header-controls { width: auto; justify-content: flex-end; } }
-
-    .metrics-strip { display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem; margin-bottom: 1rem; }
-    @media (min-width: 768px) { .metrics-strip { grid-template-columns: repeat(4, 1fr); gap: 1rem; } }
-    
-    .metric-box { display: flex; flex-direction: column; justify-content: space-between; padding: 0.85rem; }
-    .metric-title { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.2rem; font-weight: 700; }
-    .metric-value { font-size: 1.4rem; font-weight: 900; letter-spacing: -0.04em; }
-    .metric-sub { font-size: 0.7rem; color: var(--text-muted); margin-top: 0.2rem; }
-
-    .progress-track { background: var(--card-border); height: 5px; border-radius: 3px; overflow: hidden; margin-top: 0.4rem; }
-    .progress-fill { background: var(--accent-indigo); height: 100%; transition: width 0.4s ease; }
-
-    .week-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem; padding: 0.5rem 0.75rem; background: rgba(0,0,0,0.4); border-radius: 12px; border: 1px solid var(--card-border); }
-    .week-title { font-size: 0.95rem; font-weight: 900; color: var(--accent-sky); }
-    .week-select { background: var(--bg-dark); border: 1px solid var(--card-border); color: var(--text-main); font-size: 0.8rem; padding: 0.3rem 0.5rem; border-radius: 8px; outline: none; }
-
-    .day-block { border: 1px solid var(--card-border); border-radius: 12px; margin-bottom: 0.65rem; background: rgba(0,0,0,0.25); overflow: hidden; }
-    .day-header { padding: 0.85rem; display: flex; justify-content: space-between; align-items: center; cursor: pointer; background: rgba(255,255,255,0.02); }
-    .day-badge { font-weight: 900; font-size: 0.68rem; padding: 0.25rem 0.5rem; border-radius: 6px; background: var(--card-border); text-transform: uppercase; letter-spacing: 0.05em; }
-    
-    .subtask-list { padding: 0.5rem 0.75rem 0.75rem 0.75rem; display: flex; flex-direction: column; gap: 0.5rem; }
-    .subtask-item { background: rgba(255,255,255,0.03); border: 1px solid transparent; border-radius: 10px; padding: 0.75rem; transition: all 0.2s ease; }
-    .subtask-item.completed { border-color: rgba(16, 185, 129, 0.35); background: rgba(16, 185, 129, 0.06); }
-    
-    .subtask-row { display: flex; flex-direction: column; gap: 0.6rem; }
-    @media (min-width: 480px) { .subtask-row { flex-direction: row; justify-content: space-between; align-items: center; } }
-    
-    .subtask-left { display: flex; align-items: center; gap: 0.75rem; flex: 1; }
-    .checkbox-custom { width: 22px; height: 22px; accent-color: var(--accent-emerald); cursor: pointer; flex-shrink: 0; }
-    .subtask-name { font-size: 0.85rem; font-weight: 600; line-height: 1.3; }
-    .subtask-name.done { text-decoration: line-through; color: var(--text-muted); }
-    
-    .subtask-actions { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; width: 100%; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 0.5rem; }
-    @media (min-width: 480px) { .subtask-actions { width: auto; border-top: none; padding-top: 0; } }
-
-    .tag-skill { font-size: 0.6rem; font-weight: 800; padding: 0.15rem 0.45rem; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
-    .tag-grammar { background: rgba(99, 102, 241, 0.2); color: #818cf8; }
-    .tag-reading { background: rgba(14, 165, 233, 0.2); color: #38bdf8; }
-    .tag-listening { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
-    .tag-speaking { background: rgba(244, 63, 94, 0.2); color: #fb7185; }
-    .tag-writing { background: rgba(139, 92, 246, 0.2); color: #a78bfa; }
-    .tag-vocab { background: rgba(16, 185, 129, 0.2); color: #34d399; }
-
-    .meta-ratings { display: flex; gap: 0.3rem; }
-    .btn-meta { font-size: 0.68rem; padding: 0.25rem 0.5rem; border-radius: 6px; border: 1px solid var(--card-border); background: rgba(255,255,255,0.03); color: var(--text-muted); cursor: pointer; font-weight: 700; min-height: 30px; }
-    .btn-meta.selected { border-color: var(--text-main); color: var(--text-main); background: rgba(255,255,255,0.15); }
-    
-    .subtask-details { font-size: 0.78rem; color: var(--text-muted); margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px dashed var(--card-border); display: none; line-height: 1.45; }
-    .btn-toggle-detail { font-size: 0.72rem; color: var(--accent-sky); background: none; border: none; cursor: pointer; text-decoration: underline; font-weight: 600; padding: 0.2rem; }
-
-    .chart-container { position: relative; height: 210px; width: 100%; display: flex; justify-content: center; }
-    .insight-box { background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 10px; padding: 0.85rem; display: flex; gap: 0.65rem; align-items: flex-start; }
-    .insight-icon { font-size: 1.3rem; }
-    .insight-text { font-size: 0.78rem; line-height: 1.4; color: #e2e8f0; }
-
-    #toast-container { position: fixed; bottom: 15px; left: 15px; right: 15px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
-    .toast { background: rgba(20, 20, 25, 0.95); border: 1px solid var(--card-border); backdrop-filter: blur(16px); color: white; padding: 0.85rem 1rem; border-radius: 12px; font-size: 0.82rem; font-weight: 700; box-shadow: 0 10px 30px rgba(0,0,0,0.6); transform: translateY(150%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); pointer-events: auto; display: flex; align-items: center; gap: 0.65rem; }
-    .toast.show { transform: translateY(0); }
-    .toast.success { border-left: 5px solid var(--accent-emerald); }
-    .toast.error { border-left: 5px solid var(--accent-rose); }
-    .toast.info { border-left: 5px solid var(--accent-sky); }
-
-    .timer-display { font-size: 2.3rem; font-weight: 900; font-variant-numeric: tabular-nums; color: var(--text-main); text-align: center; margin: 0.4rem 0; letter-spacing: -0.05em; }
-    .timer-controls { display: flex; justify-content: center; gap: 0.4rem; flex-wrap: wrap; }
-
-    .input-row { display: flex; gap: 0.4rem; margin-top: 0.5rem; }
-    .text-input { flex: 1; background: rgba(0,0,0,0.6); border: 1px solid var(--card-border); color: white; padding: 0.5rem 0.75rem; border-radius: 8px; font-size: 0.8rem; outline: none; }
-  </style>
-</head>
-<body>
-
-  <div class="container">
-    <header>
-      <h1>TEF CANADA <span style="color: var(--accent-indigo);">MOBILE APEX</span></h1>
-      <div class="header-controls">
-        <div style="display: flex; gap: 0.35rem;">
-          <button class="btn" onclick="exportData()">💾 Backup</button>
-          <label class="btn" style="cursor: pointer; margin: 0;">
-            📂 Load <input type="file" style="display: none;" accept=".json" onchange="importData(event)">
-          </label>
-        </div>
-        <div style="display: flex; gap: 0.35rem;">
-          <span class="badge badge-purple" id="rank-badge">A2 Builder</span>
-          <span class="badge badge-rose" id="streak-badge">🔥 1 Day</span>
-          <span class="badge badge-emerald" id="xp-badge">⭐ 50 XP</span>
-        </div>
-      </div>
-    </header>
-
-    <div class="metrics-strip">
-      <div class="card metric-box" style="margin: 0;">
-        <div class="metric-title">Total Logged</div>
-        <div class="metric-value"><span id="val-total-hours">0.0</span><span style="font-size: 0.8rem; color: var(--text-muted);">/500h</span></div>
-        <div class="progress-track"><div class="progress-fill" id="bar-total-hours"></div></div>
-      </div>
-      <div class="card metric-box" style="margin: 0;">
-        <div class="metric-title">Current Week</div>
-        <div class="metric-value"><span id="val-week-hours">0.0</span><span style="font-size: 0.8rem; color: var(--text-muted);">/18h</span></div>
-        <div class="progress-track"><div class="progress-fill" id="bar-week-hours" style="background: var(--accent-emerald);"></div></div>
-      </div>
-      <div class="card metric-box" style="margin: 0;">
-        <div class="metric-title">Grammar Engine</div>
-        <div class="metric-value" style="font-size: 1.1rem; margin-top: 0.3rem;" id="val-book-name">Débutant (A1/A2)</div>
-        <div class="metric-sub" id="val-chapter-text" style="color: var(--accent-sky); font-weight: 700;">Next: Ch. 2 & 3</div>
-      </div>
-      <div class="card metric-box" style="margin: 0;">
-        <div class="metric-title">PR Readiness</div>
-        <div class="metric-value" style="font-size: 1.1rem; margin-top: 0.3rem; color: var(--accent-emerald);" id="est-date">Calculating...</div>
-        <div class="metric-sub">Pace Target</div>
-      </div>
-    </div>
-
-    <div class="dashboard-grid">
-      <div>
-        <div class="week-nav">
-          <button class="btn" onclick="navigateWeek(-1)">◀ Prev</button>
-          <div>
-            <span class="week-title" id="display-week-title">Week 1 of 40</span>
-            <select class="week-select" id="week-dropdown" onchange="jumpToWeek(this.value)"></select>
-          </div>
-          <button class="btn" onclick="navigateWeek(1)">Next ▶</button>
-        </div>
-
-        <div class="card">
-          <h2>
-            <span>📅 Granular Action Plan</span>
-            <span style="font-size: 0.68rem; color: var(--accent-purple); font-weight: 800; background: rgba(139,92,246,0.18); padding: 0.2rem 0.5rem; border-radius: 6px;" id="phase-tag">Phase 1 (W1–10)</span>
-          </h2>
-          <div id="schedule-container"></div>
-        </div>
-
-        <div class="card">
-          <h2>
-            <span>⚠️ Review Backlog</span>
-            <span style="font-size: 0.75rem; color: var(--accent-rose);" id="backlog-count">0 Queued</span>
-          </h2>
-          <div style="display: flex; flex-direction: column; gap: 0.4rem; max-height: 180px; overflow-y: auto;" id="backlog-container"></div>
-          <div class="input-row">
-            <input type="text" class="text-input" id="new-missed-lesson" placeholder="Queue a topic...">
-            <button class="btn btn-primary" onclick="addMissedLesson()">Queue</button>
-          </div>
-        </div>
-      </div>
-
-      <div>
-        <div class="card" style="border-color: rgba(16, 185, 129, 0.4); background: linear-gradient(145deg, rgba(16, 185, 129, 0.08) 0%, rgba(0,0,0,0) 100%);">
-          <h2>🌍 Real-World Missions</h2>
-          <div id="mission-container"></div>
-        </div>
-
-        <div class="card" style="border-color: rgba(14, 165, 233, 0.4); background: linear-gradient(145deg, rgba(14, 165, 233, 0.08) 0%, rgba(0,0,0,0) 100%);">
-          <h2>🧠 Strategy Insight</h2>
-          <div class="insight-box" id="ai-insight-box">
-            <div class="insight-icon">💡</div>
-            <div class="insight-text" id="ai-insight-text">Complete your first tasks to generate neural Insights.</div>
-          </div>
-        </div>
-
-        <div class="card">
-          <h2>🕸️ Skill Radar (Hours)</h2>
-          <div class="chart-container">
-            <canvas id="radarChart"></canvas>
-          </div>
-        </div>
-
-        <div class="card">
-          <h2>⏱️ Focus Timer</h2>
-          <div class="timer-display" id="timer-display">50:00</div>
-          <div class="timer-controls">
-            <button class="btn" onclick="setTimer(50)">50m</button>
-            <button class="btn" onclick="setTimer(25)">25m</button>
-            <button class="btn" onclick="setTimer(10)">10m</button>
-            <button class="btn btn-primary" onclick="toggleTimer()" id="timer-start-btn">Start</button>
-          </div>
-        </div>
-
-        <div class="card">
-          <h2>🏆 Rewards</h2>
-          <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-            <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.3); padding: 0.6rem 0.8rem; border-radius: 8px;">
-              <div><div style="font-size: 0.8rem; font-weight: 700;">🍿 Movie Night</div><div style="font-size: 0.68rem; color: var(--accent-purple);">200 XP</div></div>
-              <button class="btn" onclick="claimReward(200, 'Movie Night')">Claim</button>
-            </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.3); padding: 0.6rem 0.8rem; border-radius: 8px;">
-              <div><div style="font-size: 0.8rem; font-weight: 700;">⚡ Skip Workday</div><div style="font-size: 0.68rem; color: var(--accent-purple);">350 XP</div></div>
-              <button class="btn" onclick="claimReward(350, 'Skip Workday')">Claim</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div id="toast-container"></div>
-
-  <script>
-    // JSONbin Configuration
-    const BIN_ID = '6a5e5f41da38895dfe775264';
-    const API_KEY = '$2a$10$CBiAbs7q7hQUAkAYxOsE3OGWPOHlW3SdWxQW.1fnYe1MA4mzdZ9x';
-    
     let radarChartInstance = null;
 
     function showToast(message, type = 'info') {
@@ -270,6 +16,64 @@
       setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 300); }, 2500);
     }
 
+    const realWorldMissions = [
+      { id: 1, reqHours: 5, title: "The Immersion Drop", desc: "Change your smartphone's system language to French for 48 hours.", xp: 300 },
+      { id: 2, reqHours: 20, title: "The Coffee Run", desc: "Order a café/meal entirely in French.", xp: 400 },
+      { id: 3, reqHours: 50, title: "The Local Navigator", desc: "Ask someone for directions or a recommendation in French.", xp: 500 },
+      { id: 4, reqHours: 100, title: "The Hotline", desc: "Call a Canadian business in Ottawa/Quebec to ask 3 questions.", xp: 700 },
+      { id: 5, reqHours: 150, title: "The Storyteller", desc: "Record a 3-minute voice note describing your weekend in French.", xp: 800 },
+      { id: 6, reqHours: 250, title: "The Debater", desc: "Hold a 10-minute debate with a francophone.", xp: 1000 }
+    ];
+
+    function getGrammarChapterForDay(weekNum, dayCode) {
+      let dayOffset = dayCode === 'MON' ? 0 : dayCode === 'TUE' ? 1 : 2;
+      const globalIndex = ((weekNum - 1) * 3) + dayOffset; 
+      if (globalIndex <= 40) return { book: 'Débutant (A1/A2)', text: `Ch. ${globalIndex + 2} & ${globalIndex + 3}` };
+      else if (globalIndex <= 92) return { book: 'Intermédiaire (A2/B1)', text: `Ch. ${globalIndex - 40} & ${globalIndex - 39}` };
+      else return { book: 'Avancé (B1/B2)', text: `Ch. ${globalIndex - 92} & ${globalIndex - 91}` };
+    }
+
+    function buildMasterDayTemplates(weekNum) {
+      const gMon = getGrammarChapterForDay(weekNum, 'MON');
+      const gTue = getGrammarChapterForDay(weekNum, 'TUE');
+      const gThu = getGrammarChapterForDay(weekNum, 'THU');
+
+      return [
+        { day: 'MON', title: `Reading & ${gMon.book}`, tasks: [ { id: 'mon_1', name: 'Anki Flashcard Drill', dur: 0.25, type: 'vocab', inst: 'Complete 15 new cards + reviews.' }, { id: 'mon_2', name: `${gMon.text} (Grammar)`, dur: 1.0, type: 'grammar', inst: `Study ${gMon.text} in Grammaire Progressive. Do exercises in notebook.` }, { id: 'mon_3', name: 'Radio-Canada Reading', dur: 1.0, type: 'reading', inst: 'Read 1 article. Extract unknown words into notebook.' }, { id: 'mon_4', name: 'InnerFrench Audio Mapping', dur: 1.0, type: 'listening', inst: 'Listen while following transcript.' }, { id: 'mon_5', name: 'B2 Synonym Factory', dur: 0.75, type: 'vocab', inst: 'Find 3 formal B2 synonyms for 10 basic words.' }, { id: 'mon_6', name: 'Read-Aloud & Anki Entry', dur: 1.0, type: 'speaking', inst: 'Read article out loud. Input words into Anki.' } ] },
+        { day: 'TUE', title: `Mauril, Voice & ${gTue.book}`, tasks: [ { id: 'tue_1', name: 'Anki Flashcard Drill', dur: 0.25, type: 'vocab', inst: 'Complete 15 new cards + reviews.' }, { id: 'tue_2', name: `${gTue.text} (Grammar)`, dur: 1.0, type: 'grammar', inst: `Study ${gTue.text}. Grade immediately.` }, { id: 'tue_3', name: 'Mauril App Practice', dur: 1.0, type: 'listening', inst: 'Complete Radio-Canada audio modules.' }, { id: 'tue_4', name: 'Podcast Shadowing', dur: 1.0, type: 'speaking', inst: 'Pause InnerFrench and repeat out loud.' }, { id: 'tue_5', name: 'TEF Section A & B Drills', dur: 0.75, type: 'writing', inst: 'Write formal questions or outline arguments.' }, { id: 'tue_6', name: 'Gemini Voice Roleplay', dur: 1.0, type: 'speaking', inst: 'Run timed Section A & B simulations.' } ] },
+        { day: 'WED', title: 'Passive Listening (25m)', tasks: [{ id: 'wed_1', name: 'Radio-Canada Passive', dur: 0.42, type: 'listening', inst: 'Listen during evening commute.' }] },
+        { day: 'THU', title: `Vocab & ${gThu.book} (65m)`, tasks: [ { id: 'thu_1', name: 'Power Verbs Anki Drill', dur: 0.42, type: 'vocab', inst: 'Master irregular verbs.' }, { id: 'thu_2', name: `${gThu.text} Target`, dur: 0.5, type: 'grammar', inst: `Quick review for ${gThu.text}.` }, { id: 'thu_3', name: '5-Sentence Reflection', dur: 0.16, type: 'writing', inst: 'Write 5 sentences about workday in past tense.' } ] },
+        { day: 'FRI', title: 'Live Speech Practice (65m)', tasks: [ { id: 'fri_1', name: 'Anki Review & Expansion', dur: 0.33, type: 'vocab', inst: 'Review and log 5 new terms.' }, { id: 'fri_2', name: 'Gemini Voice Roleplay', dur: 0.75, type: 'speaking', inst: '45m timed voice roleplay.' } ] },
+        { day: 'SAT', title: 'Passive Listening (25m)', tasks: [{ id: 'sat_1', name: 'Radio-Canada Passive', dur: 0.42, type: 'listening', inst: 'Listen to radio after shift.' }] },
+        { day: 'SUN', title: 'Grammar, Dictée & Essay', tasks: [ { id: 'sun_1', name: 'Anki Warm-Up', dur: 0.25, type: 'vocab', inst: 'Complete 15 new cards.' }, { id: 'sun_2', name: 'TEF Essay Drafting', dur: 1.0, type: 'writing', inst: 'Draft 150-word opinion essay.' }, { id: 'sun_3', name: 'Dictée Practice', dur: 0.75, type: 'listening', inst: 'Listen and transcribe exactly.' }, { id: 'sun_4', name: 'AI Essay Review & Rewrite', dur: 1.0, type: 'writing', inst: 'Get Gemini corrections and handwrite.' } ] }
+      ];
+    }
+
+    function createEmptyWeeks() {
+      const weeks = {};
+      for (let i = 1; i <= 40; i++) weeks[i] = { weekNum: i, days: buildMasterDayTemplates(i).map(d => ({ ...d, tasks: d.tasks.map(t => ({ ...t, done: false, difficulty: null })) })) };
+      return weeks;
+    }
+
+    const initialState = { selectedWeek: 1, totalHours: 0.0, xp: 0, streak: 0, lastStudyDate: null, missedLessons: [], completedMissions: [], weeks: createEmptyWeeks() };
+    let state = loadLocalData();
+
+    function loadLocalData() {
+      const saved = localStorage.getItem('tef_apex_control_v12');
+      if (!saved) return JSON.parse(JSON.stringify(initialState));
+      const parsed = JSON.parse(saved);
+      if (!parsed.weeks) parsed.weeks = createEmptyWeeks();
+      if (!parsed.completedMissions) parsed.completedMissions = [];
+      return parsed;
+    }
+
+    // LocalStorage primary with instant backup sync fallback
+    function saveData() { 
+      localStorage.setItem('tef_apex_control_v12', JSON.stringify(state));
+      render(); 
+      showToast('Progress saved locally!', 'success');
+    }
+
     function exportData() {
       const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state));
       const downloadAnchorNode = document.createElement('a');
@@ -277,7 +81,7 @@
       downloadAnchorNode.setAttribute("download", `TEF_Mobile_Backup_${new Date().toISOString().split('T')[0]}.json`);
       document.body.appendChild(downloadAnchorNode); 
       downloadAnchorNode.click(); downloadAnchorNode.remove();
-      showToast('Backup downloaded to phone!', 'success');
+      showToast('Backup downloaded!', 'success');
     }
 
     function importData(event) {
@@ -296,15 +100,6 @@
       };
       reader.readAsText(file);
     }
-
-    const realWorldMissions = [
-      { id: 1, reqHours: 5, title: "The Immersion Drop", desc: "Change your smartphone's system language to French for 48 hours.", xp: 300 },
-      { id: 2, reqHours: 20, title: "The Coffee Run", desc: "Order a café/meal entirely in French.", xp: 400 },
-      { id: 3, reqHours: 50, title: "The Local Navigator", desc: "Ask someone for directions or a recommendation in French.", xp: 500 },
-      { id: 4, reqHours: 100, title: "The Hotline", desc: "Call a Canadian business in Ottawa/Quebec to ask 3 questions.", xp: 700 },
-      { id: 5, reqHours: 150, title: "The Storyteller", desc: "Record a 3-minute voice note describing your weekend in French.", xp: 800 },
-      { id: 6, reqHours: 250, title: "The Debater", desc: "Hold a 10-minute debate with a francophone.", xp: 1000 }
-    ];
 
     function completeMission(id, xp, title) {
       if (!state.completedMissions.includes(id)) {
@@ -338,77 +133,6 @@
           </div>
         `;
       }
-    }
-
-    function getGrammarChapterForDay(weekNum, dayCode) {
-      let dayOffset = dayCode === 'MON' ? 0 : dayCode === 'TUE' ? 1 : 2;
-      const globalIndex = ((weekNum - 1) * 3) + dayOffset; 
-      if (globalIndex <= 40) return { book: 'Débutant (A1/A2)', text: `Ch. ${globalIndex + 2} & ${globalIndex + 3}` };
-      else if (globalIndex <= 92) return { book: 'Intermédiaire (A2/B1)', text: `Ch. ${globalIndex - 40} & ${globalIndex - 39}` };
-      else return { book: 'Avancé (B1/B2)', text: `Ch. ${globalIndex - 92} & ${globalIndex - 91}` };
-    }
-
-    function buildMasterDayTemplates(weekNum) {
-      const gMon = getGrammarChapterForDay(weekNum, 'MON');
-      const gTue = getGrammarChapterForDay(weekNum, 'TUE');
-      const gThu = getGrammarChapterForDay(weekNum, 'THU');
-
-      return [
-        { day: 'MON', title: `Reading & ${gMon.book}`, tasks: [ { id: 'mon_1', name: 'Anki Flashcard Drill', dur: 0.25, type: 'vocab', inst: 'Complete 15 new cards + reviews.' }, { id: 'mon_2', name: `${gMon.text} (Grammar)`, dur: 1.0, type: 'grammar', inst: `Study ${gMon.text} in Grammaire Progressive. Do exercises in notebook.` }, { id: 'mon_3', name: 'Radio-Canada Reading', dur: 1.0, type: 'reading', inst: 'Read 1 article. Extract unknown words into notebook.' }, { id: 'mon_4', name: 'InnerFrench Audio Mapping', dur: 1.0, type: 'listening', inst: 'Listen while following transcript.' }, { id: 'mon_5', name: 'B2 Synonym Factory', dur: 0.75, type: 'vocab', inst: 'Find 3 formal B2 synonyms for 10 basic words.' }, { id: 'mon_6', name: 'Read-Aloud & Anki Entry', dur: 1.0, type: 'speaking', inst: 'Read article out loud. Input words into Anki.' } ] },
-        { day: 'TUE', title: `Mauril, Voice & ${gTue.book}`, tasks: [ { id: 'tue_1', name: 'Anki Flashcard Drill', dur: 0.25, type: 'vocab', inst: 'Complete 15 new cards + reviews.' }, { id: 'tue_2', name: `${gTue.text} (Grammar)`, dur: 1.0, type: 'grammar', inst: `Study ${gTue.text}. Grade immediately.` }, { id: 'tue_3', name: 'Mauril App Practice', dur: 1.0, type: 'listening', inst: 'Complete Radio-Canada audio modules.' }, { id: 'tue_4', name: 'Podcast Shadowing', dur: 1.0, type: 'speaking', inst: 'Pause InnerFrench and repeat out loud.' }, { id: 'tue_5', name: 'TEF Section A & B Drills', dur: 0.75, type: 'writing', inst: 'Write formal questions or outline arguments.' }, { id: 'tue_6', name: 'Gemini Voice Roleplay', dur: 1.0, type: 'speaking', inst: 'Run timed Section A & B simulations.' } ] },
-        { day: 'WED', title: 'Passive Listening (25m)', tasks: [{ id: 'wed_1', name: 'Radio-Canada Passive', dur: 0.42, type: 'listening', inst: 'Listen during evening commute.' }] },
-        { day: 'THU', title: `Vocab & ${gThu.book} (65m)`, tasks: [ { id: 'thu_1', name: 'Power Verbs Anki Drill', dur: 0.42, type: 'vocab', inst: 'Master irregular verbs.' }, { id: 'thu_2', name: `${gThu.text} Target`, dur: 0.5, type: 'grammar', inst: `Quick review for ${gThu.text}.` }, { id: 'thu_3', name: '5-Sentence Reflection', dur: 0.16, type: 'writing', inst: 'Write 5 sentences about workday in past tense.' } ] },
-        { day: 'FRI', title: 'Live Speech Practice (65m)', tasks: [ { id: 'fri_1', name: 'Anki Review & Expansion', dur: 0.33, type: 'vocab', inst: 'Review and log 5 new terms.' }, { id: 'fri_2', name: 'Gemini Voice Roleplay', dur: 0.75, type: 'speaking', inst: '45m timed voice roleplay.' } ] },
-        { day: 'SAT', title: 'Passive Listening (25m)', tasks: [{ id: 'sat_1', name: 'Radio-Canada Passive', dur: 0.42, type: 'listening', inst: 'Listen to radio after shift.' }] },
-        { day: 'SUN', title: 'Grammar, Dictée & Essay', tasks: [ { id: 'sun_1', name: 'Anki Warm-Up', dur: 0.25, type: 'vocab', inst: 'Complete 15 new cards.' }, { id: 'sun_2', name: 'TEF Essay Drafting', dur: 1.0, type: 'writing', inst: 'Draft 150-word opinion essay.' }, { id: 'sun_3', name: 'Dictée Practice', dur: 0.75, type: 'listening', inst: 'Listen and transcribe exactly.' }, { id: 'sun_4', name: 'AI Essay Review & Rewrite', dur: 1.0, type: 'writing', inst: 'Get Gemini corrections and handwrite.' } ] }
-      ];
-    }
-
-    function createEmptyWeeks() {
-      const weeks = {};
-      for (let i = 1; i <= 40; i++) weeks[i] = { weekNum: i, days: buildMasterDayTemplates(i).map(d => ({ ...d, tasks: d.tasks.map(t => ({ ...t, done: false, difficulty: null })) })) };
-      return weeks;
-    }
-
-    const initialState = { selectedWeek: 1, totalHours: 0.0, xp: 0, streak: 0, lastStudyDate: null, missedLessons: [], completedMissions: [], weeks: createEmptyWeeks() };
-    let state = JSON.parse(JSON.stringify(initialState));
-
-    // Cloud Sync Functions via JSONbin
-    async function loadFromCloud() {
-      try {
-        let response = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
-          headers: { 'X-Master-Key': API_KEY }
-        });
-        let result = await response.json();
-        if (result && result.record && result.record.weeks) {
-          if (!result.record.completedMissions) result.record.completedMissions = [];
-          state = { ...initialState, ...result.record };
-          render();
-          showToast('Synced with cloud!', 'success');
-        }
-      } catch (error) {
-        console.error("Error loading data from cloud:", error);
-      }
-    }
-
-    async function saveToCloud() {
-      try {
-        await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Master-Key': API_KEY
-          },
-          body: JSON.stringify(state)
-        });
-      } catch (error) {
-        console.error("Error saving data to cloud:", error);
-      }
-    }
-
-    function saveData() { 
-      saveToCloud(); 
-      render(); 
     }
 
     function navigateWeek(delta) { state.selectedWeek = Math.max(1, Math.min(40, state.selectedWeek + delta)); saveData(); }
@@ -580,8 +304,5 @@
       const skillTotals = getSkillTotals(); updateChart(skillTotals); generateAIInsight(skillTotals); renderMissions();
     }
 
-    // Initialize by fetching state from the cloud on load
-    window.addEventListener('DOMContentLoaded', loadFromCloud);
+    render();
   </script>
-</body>
-</html>
