@@ -252,7 +252,10 @@
   <div id="toast-container"></div>
 
   <script>
-    const STORAGE_KEY = 'tef_apex_control_v12';
+    // JSONbin Configuration
+    const BIN_ID = '6a5e5f41da38895dfe775264';
+    const API_KEY = '$2a$10$CBiAbs7q7hQUAkAYxOsE3OGWPOHlW3SdWxQW.1fnYe1MA4mzdZ9x';
+    
     let radarChartInstance = null;
 
     function showToast(message, type = 'info') {
@@ -368,18 +371,46 @@
     }
 
     const initialState = { selectedWeek: 1, totalHours: 0.0, xp: 0, streak: 0, lastStudyDate: null, missedLessons: [], completedMissions: [], weeks: createEmptyWeeks() };
-    let state = loadData();
+    let state = JSON.parse(JSON.stringify(initialState));
 
-    function loadData() {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (!saved) return JSON.parse(JSON.stringify(initialState));
-      const parsed = JSON.parse(saved);
-      if (!parsed.weeks) parsed.weeks = createEmptyWeeks();
-      if (!parsed.completedMissions) parsed.completedMissions = [];
-      return parsed;
+    // Cloud Sync Functions via JSONbin
+    async function loadFromCloud() {
+      try {
+        let response = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
+          headers: { 'X-Master-Key': API_KEY }
+        });
+        let result = await response.json();
+        if (result && result.record && result.record.weeks) {
+          if (!result.record.completedMissions) result.record.completedMissions = [];
+          state = { ...initialState, ...result.record };
+          render();
+          showToast('Synced with cloud!', 'success');
+        }
+      } catch (error) {
+        console.error("Error loading data from cloud:", error);
+      }
     }
 
-    function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); render(); }
+    async function saveToCloud() {
+      try {
+        await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Master-Key': API_KEY
+          },
+          body: JSON.stringify(state)
+        });
+      } catch (error) {
+        console.error("Error saving data to cloud:", error);
+      }
+    }
+
+    function saveData() { 
+      saveToCloud(); 
+      render(); 
+    }
+
     function navigateWeek(delta) { state.selectedWeek = Math.max(1, Math.min(40, state.selectedWeek + delta)); saveData(); }
     function jumpToWeek(w) { state.selectedWeek = parseInt(w); saveData(); }
 
@@ -415,7 +446,7 @@
         showToast(`+${taskXP} XP Logged!`, 'success');
       } else {
         state.totalHours = Math.max(0, parseFloat((state.totalHours - task.dur).toFixed(2)));
-        state.xp = Math.max(0, state.xp - taskXP); // Properly subtract XP when unchecking
+        state.xp = Math.max(0, state.xp - taskXP);
         showToast(`Task unchecked (-${taskXP} XP)`, 'info');
       }
       saveData();
@@ -548,7 +579,9 @@
 
       const skillTotals = getSkillTotals(); updateChart(skillTotals); generateAIInsight(skillTotals); renderMissions();
     }
-    render();
+
+    // Initialize by fetching state from the cloud on load
+    window.addEventListener('DOMContentLoaded', loadFromCloud);
   </script>
 </body>
 </html>
